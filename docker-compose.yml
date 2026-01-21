@@ -1,0 +1,161 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    volumes:
+      - authentik-database:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+      POSTGRES_USER: ${PG_USER:-authentik}
+      POSTGRES_DB: ${PG_DB:-authentik}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    networks:
+      - authentik-internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:7-alpine
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "1"
+      - --loglevel
+      - warning
+      - --requirepass
+      - ${REDIS_PASSWORD}
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - authentik-redis:/data
+    networks:
+      - authentik-internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+  server:
+    image: ghcr.io/goauthentik/server:2025.8
+    command: server
+    user: "1000:1000"
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_REDIS__PASSWORD: ${REDIS_PASSWORD}
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_LOG_LEVEL: ${AUTHENTIK_LOG_LEVEL:-info}
+      AUTHENTIK_COOKIE__SECURE: "true"
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD}
+      AUTHENTIK_EMAIL__HOST: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__PORT: 587
+      AUTHENTIK_EMAIL__USERNAME: ${AUTH_EMAIL_USER}
+      AUTHENTIK_EMAIL__PASSWORD: ${AUTHENTIK_EMAIL__PASSWORD}
+      AUTHENTIK_EMAIL__USE_TLS: "true"
+      AUTHENTIK_EMAIL__USE_SSL: "false"
+      AUTHENTIK_EMAIL__FROM: ${AUTH_EMAIL_FROM}
+
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+    networks:
+      - traefik-public
+      - authentik-internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        
+        # HTTPS Router
+        - "traefik.http.routers.authentik.rule=Host(`${AUTHENTIK_HOST}`)"
+        - "traefik.http.routers.authentik.entrypoints=websecure"
+        - "traefik.http.routers.authentik.tls.certresolver=cloudflare"
+        - "traefik.http.routers.authentik.middlewares=crowdsec@file,authentik-headers"
+        - "traefik.http.routers.authentik.service=authentik"
+        
+        # Service
+        - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+        
+        # Security headers
+        - "traefik.http.middlewares.authentik-headers.headers.stsSeconds=31536000"
+        - "traefik.http.middlewares.authentik-headers.headers.stsIncludeSubdomains=true"
+        - "traefik.http.middlewares.authentik-headers.headers.stsPreload=true"
+        - "traefik.http.middlewares.authentik-headers.headers.forceSTSHeader=true"
+        - "traefik.http.middlewares.authentik-headers.headers.frameDeny=true"
+        - "traefik.http.middlewares.authentik-headers.headers.contentTypeNosniff=true"
+        - "traefik.http.middlewares.authentik-headers.headers.browserXssFilter=true"
+        - "traefik.http.middlewares.authentik-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+
+  worker:
+    image: ghcr.io/goauthentik/server:2025.8
+    command: worker
+    user: root
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_REDIS__PASSWORD: ${REDIS_PASSWORD}
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_LOG_LEVEL: ${AUTHENTIK_LOG_LEVEL:-info}
+      AUTHENTIK_EMAIL__HOST: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__PORT: 587
+      AUTHENTIK_EMAIL__USERNAME: ${AUTH_EMAIL_USER}
+      AUTHENTIK_EMAIL__PASSWORD: ${AUTHENTIK_EMAIL__PASSWORD}
+      AUTHENTIK_EMAIL__USE_TLS: "true"
+      AUTHENTIK_EMAIL__USE_SSL: "false"
+      AUTHENTIK_EMAIL__FROM: ${AUTH_EMAIL_FROM}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - authentik-media:/media
+      - authentik-certs:/certs
+      - authentik-templates:/templates
+    networks:
+      - authentik-internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  authentik-database:
+    driver: local
+  authentik-redis:
+    driver: local
+  authentik-media:
+    driver: local
+  authentik-certs:
+    driver: local
+  authentik-templates:
+    driver: local
+
+networks:
+  traefik-public:
+    external: true
+  authentik-internal:
+    driver: overlay
