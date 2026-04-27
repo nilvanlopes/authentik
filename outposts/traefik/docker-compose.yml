@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  proxy:
+    image: ghcr.io/goauthentik/proxy:2025.8
+    environment:
+      AUTHENTIK_HOST: ${AUTHENTIK_HOST:?authentik host required}
+      AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:?authentik token required}
+      AUTHENTIK_INSECURE: ${AUTHENTIK_INSECURE:-false}
+      AUTHENTIK_HOST_BROWSER: ${AUTHENTIK_HOST_BROWSER:-}
+    networks:
+      - traefik-public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  traefik-public:
+    external: true
