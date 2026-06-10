@@ -1,0 +1,3 @@
+[submodule "foundry-signup"]
+	path = foundry-signup
+	url = https://github.com/nilvanlopes/foundry-signup.git
