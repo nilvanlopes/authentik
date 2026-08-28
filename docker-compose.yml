@@ -48,7 +48,7 @@ services:
         condition: on-failure
 
   server:
-    image: ghcr.io/goauthentik/server:2025.8@sha256:f162a2664fc54337be65f796130443e19d038caa82be572b7d44aa8b1a895af2
+    image: ghcr.io/goauthentik/server:2025.12@sha256:b8c25c6904aa62eee04f175a97fd6869114a8dceaf309d698f615b2c52302823
     command: server
     user: "1000:1000"
     environment:
@@ -107,7 +107,7 @@ services:
         - "traefik.http.middlewares.authentik-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
 
   worker:
-    image: ghcr.io/goauthentik/server:2025.8@sha256:f162a2664fc54337be65f796130443e19d038caa82be572b7d44aa8b1a895af2
+    image: ghcr.io/goauthentik/server:2025.12@sha256:b8c25c6904aa62eee04f175a97fd6869114a8dceaf309d698f615b2c52302823
     command: worker
     user: root
     environment:
