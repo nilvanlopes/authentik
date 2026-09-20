@@ -92,6 +92,17 @@ services:
         - "traefik.http.routers.authentik.tls.certresolver=cloudflare"
         - "traefik.http.routers.authentik.middlewares=crowdsec@file,authentik-headers"
         - "traefik.http.routers.authentik.service=authentik"
+
+        # Os outposts usam estes endpoints autenticados por token para
+        # sincronizar configuração e manter o websocket de eventos. A rota
+        # dedicada evita que o CrowdSec bloqueie a comunicação servidor->outpost.
+        - "traefik.http.routers.authentik-outpost-api.rule=Host(`${AUTHENTIK_HOST}`) && (PathPrefix(`/api/v3/outposts/`) || Path(`/api/v3/root/config/`) || PathPrefix(`/ws/outpost/`))"
+        - "traefik.http.routers.authentik-outpost-api.entrypoints=websecure"
+        - "traefik.http.routers.authentik-outpost-api.priority=100"
+        - "traefik.http.routers.authentik-outpost-api.tls.certresolver=cloudflare"
+        - "traefik.http.routers.authentik-outpost-api.middlewares=authentik-outpost-host"
+        - "traefik.http.routers.authentik-outpost-api.service=authentik"
+        - "traefik.http.middlewares.authentik-outpost-host.headers.customrequestheaders.Host=0.0.0.0"
         
         # Service
         - "traefik.http.services.authentik.loadbalancer.server.port=9000"
