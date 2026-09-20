@@ -3,13 +3,18 @@ version: "3.8"
 services:
   proxy:
     image: ghcr.io/goauthentik/proxy:2026.2.7@sha256:2867b6934893a13eb52840cd76a49c66ad26f5d5dca008506641f7ce2cf53e8c
+    user: "0:0"
     environment:
-      AUTHENTIK_HOST: ${AUTHENTIK_HOST:?authentik host required}
+      AUTHENTIK_HOST: http://server:9000
       AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:?authentik token required}
       AUTHENTIK_INSECURE: ${AUTHENTIK_INSECURE:-false}
       AUTHENTIK_HOST_BROWSER: ${AUTHENTIK_HOST_BROWSER:-}
+      TMPDIR: /var/lib/authentik-outpost-session
+    volumes:
+      - authentik-foundry-outpost-session:/var/lib/authentik-outpost-session
     networks:
       - traefik-public
+      - authentik-internal
     deploy:
       replicas: 1
       restart_policy:
@@ -18,3 +23,9 @@ services:
 networks:
   traefik-public:
     external: true
+  authentik-internal:
+    external: true
+    name: authentik_authentik-internal
+
+volumes:
+  authentik-foundry-outpost-session:
