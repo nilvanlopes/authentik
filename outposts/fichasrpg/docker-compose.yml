@@ -1,0 +1,34 @@
+services:
+  proxy:
+    image: ghcr.io/goauthentik/proxy:2026.2.7@sha256:2867b6934893a13eb52840cd76a49c66ad26f5d5dca008506641f7ce2cf53e8c
+    user: "0:0"
+    environment:
+      AUTHENTIK_HOST: http://server:9000
+      AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:?authentik token required}
+      AUTHENTIK_INSECURE: "false"
+      AUTHENTIK_HOST_BROWSER: https://authentik.nilvanlopes.com
+      TMPDIR: /var/lib/authentik-outpost-session
+    volumes:
+      - authentik-fichasrpg-outpost-session:/var/lib/authentik-outpost-session
+    networks:
+      - traefik-public
+      - authentik-internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 0
+
+networks:
+  traefik-public:
+    external: true
+  authentik-internal:
+    external: true
+    name: authentik_authentik-internal
+
+volumes:
+  authentik-fichasrpg-outpost-session:
