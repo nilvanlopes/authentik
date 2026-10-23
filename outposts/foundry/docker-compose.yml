@@ -2,13 +2,16 @@ version: "3.8"
 
 services:
   proxy:
-    image: ghcr.io/goauthentik/proxy:2026.2.7@sha256:2867b6934893a13eb52840cd76a49c66ad26f5d5dca008506641f7ce2cf53e8c
+    image: ghcr.io/goauthentik/proxy:2026.8.4@sha256:70bd1eb19dfb0d15efa12f2d3377a7dd2655a2aca06ffb8e221199ae323a6e57
     user: "0:0"
     environment:
       AUTHENTIK_HOST: http://server:9000
       AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:?authentik token required}
       AUTHENTIK_INSECURE: ${AUTHENTIK_INSECURE:-false}
       AUTHENTIK_HOST_BROWSER: ${AUTHENTIK_HOST_BROWSER:-}
+      AUTHENTIK_LISTEN__HTTP: 0.0.0.0:9000
+      AUTHENTIK_LISTEN__HTTPS: 0.0.0.0:9443
+      AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: "127.0.0.0/8,::1/128,10.0.1.0/24"
       TMPDIR: /var/lib/authentik-outpost-session
     volumes:
       - authentik-foundry-outpost-session:/var/lib/authentik-outpost-session
