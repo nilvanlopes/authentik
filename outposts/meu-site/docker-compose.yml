@@ -1,0 +1,42 @@
+services:
+  proxy:
+    image: ghcr.io/goauthentik/proxy:2026.8.4@sha256:70bd1eb19dfb0d15efa12f2d3377a7dd2655a2aca06ffb8e221199ae323a6e57
+    read_only: true
+    cap_drop: [ALL]
+    environment:
+      AUTHENTIK_HOST: http://server:9000
+      AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:?authentik token required}
+      AUTHENTIK_INSECURE: 'false'
+      AUTHENTIK_HOST_BROWSER: https://authentik.nilvanlopes.com
+      AUTHENTIK_LISTEN__HTTP: 0.0.0.0:9000
+      AUTHENTIK_LISTEN__HTTPS: 0.0.0.0:9443
+      AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: '127.0.0.0/8,::1/128,10.0.1.0/24'
+      TMPDIR: /tmp
+    volumes:
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 16777216
+    networks: [traefik-public, authentik-internal]
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.hostname == pyuserver]
+      restart_policy:
+        condition: any
+        delay: 5s
+      update_config:
+        order: start-first
+        failure_action: rollback
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          memory: 32M
+networks:
+  traefik-public:
+    external: true
+  authentik-internal:
+    external: true
+    name: authentik_authentik-internal
