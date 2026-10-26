@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   proxy:
-    image: ghcr.io/goauthentik/proxy:2026.2.7@sha256:2867b6934893a13eb52840cd76a49c66ad26f5d5dca008506641f7ce2cf53e8c
+    image: ghcr.io/goauthentik/proxy:2026.8.5@sha256:34640cf41e009ab052d4b9119cea816713adcd1eaac95de6caefebfe86d3fcd9
     environment:
       AUTHENTIK_HOST: ${AUTHENTIK_HOST:?authentik host required}
       AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:?authentik token required}
