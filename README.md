@@ -40,7 +40,7 @@ O fluxo padrão da marca e os provedores dos outros serviços são preservados.
 A configuração fica salva no banco do Authentik. Pelo painel administrativo,
 em **Flows and Stages → Flows**, o fluxo contém User Logout na ordem 0 e
 Redirect na ordem 100, com destino
-`https://fichasrpg.nilvanlopes.com/outpost.goauthentik.io/start?rd=https%3A%2F%2Ffichasrpg.nilvanlopes.com%2F`.
+`https://fichasrpg.nilvanlopes.com/outpost.goauthentik.io/start?rd=https%3A%2F%2Ffichasrpg.nilvanlopes.com%2Ffichas`.
 Esse destino é reaplicado por `python3 branding/apply-theme.py --apply`.
 Em **Applications → Providers**, esse fluxo é selecionado como fluxo de
 invalidação apenas do provedor `fichamutantes-forward-auth`.
@@ -58,11 +58,20 @@ No fluxo `fichasrpg-authentication-flow`, o vínculo do estágio de identificaç
 usa a política `fichasrpg-return-authenticated-to-home`, avaliada quando o
 estágio é executado. Se a sessão já estiver autenticada e não houver uma
 reautenticação em andamento, a política usa o cancelamento nativo do fluxo e
-a abertura da aplicação `fichamutantes`, cujo destino é o portal. Isso limpa
+a abertura da aplicação `fichamutantes`, cujo destino é
+`https://fichasrpg.nilvanlopes.com/fichas`. Isso limpa
 o fluxo pendente antes do retorno, preservando o logout. Assim, voltar ao login
 leva ao portal sem reutilizar o callback OAuth anterior. A política fica salva
 no Authentik, em **Customization → Policies**, e é vinculada somente ao fluxo
 do Fichas RPG.
+
+A raiz `https://fichasrpg.nilvanlopes.com/` apresenta uma landing page pública.
+O portal autenticado fica em `/fichas`. Além do destino de abertura da aplicação
+e do retorno de logout, o Redirect `fichasrpg-enrollment-return` e os destinos
+das políticas `fichasrpg-google-authentication` e
+`fichasrpg-google-source-enrollment` usam `/fichas`. A origem externa do provedor
+continua `https://fichasrpg.nilvanlopes.com`, sem esse caminho; a source
+`google-fichasrpg` e seu callback OAuth permanecem nos endereços existentes.
 
 This repository contains a `docker-compose.yml` file for setting up [Authentik](https://goauthentik.io/), an open-source identity provider, along with PostgreSQL. This setup is configured to work with Traefik for reverse proxying and SSL termination.
 
