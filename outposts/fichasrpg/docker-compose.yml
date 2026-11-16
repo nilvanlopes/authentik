@@ -1,6 +1,6 @@
 services:
   proxy:
-    image: ghcr.io/goauthentik/proxy:2026.8.4@sha256:70bd1eb19dfb0d15efa12f2d3377a7dd2655a2aca06ffb8e221199ae323a6e57
+    image: ghcr.io/goauthentik/proxy:2026.8.5@sha256:34640cf41e009ab052d4b9119cea816713adcd1eaac95de6caefebfe86d3fcd9
     user: "0:0"
     environment:
       AUTHENTIK_HOST: http://server:9000
