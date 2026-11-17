@@ -2,7 +2,7 @@
 
 ## Versão em uso
 
-Servidor, worker e os outposts usam as imagens oficiais **2026.8.4**,
+Servidor, worker e os outposts usam as imagens oficiais **2026.8.5**,
 fixadas por digest nos arquivos Compose. A migração de 2026.2.7 passou por
 2026.5.7 antes de chegar a 2026.8.4. Em futuras atualizações, mantenha todos
 esses componentes na mesma versão e siga a sequência de versões principais
