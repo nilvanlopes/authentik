@@ -12,6 +12,12 @@ services:
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     networks:
       - authentik-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     deploy:
       replicas: 1
       placement:
@@ -36,7 +42,8 @@ services:
       AUTHENTIK_LOG_LEVEL: ${AUTHENTIK_LOG_LEVEL:-info}
       AUTHENTIK_LISTEN__HTTP: 0.0.0.0:9000
       AUTHENTIK_LISTEN__HTTPS: 0.0.0.0:9443
-      AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: "127.0.0.0/8,::1/128,10.0.1.0/24,10.0.7.0/24"
+      # Outposts send the public HTTPS scheme over the authentik-internal network.
+      AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: "127.0.0.0/8,::1/128,10.0.1.0/24,10.0.4.0/24,10.0.7.0/24"
       AUTHENTIK_COOKIE__SECURE: "true"
       AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
       AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD}
@@ -146,3 +153,6 @@ networks:
     external: true
   authentik-internal:
     driver: overlay
+    ipam:
+      config:
+        - subnet: 10.0.4.0/24
